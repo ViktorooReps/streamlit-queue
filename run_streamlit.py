@@ -44,5 +44,4 @@ if __name__ == '__main__':
     if st.session_state['LOGGED_IN']:
         st.write('You are:', st.session_state['USERNAME'])
         st.write('Your Tg:', names_to_tg[st.session_state['USERNAME']])
-        st.write(st.secrets.credentials)
 

@@ -12,4 +12,4 @@ if __name__ == '__main__':
         creds = json.load(f)
 
     for secret_name, secret_value in creds.items():
-        print(f'credentials.{secret_name} = """{secret_value}"""')
+        print(f'credentials.{secret_name} = """\n{secret_value}"""')
