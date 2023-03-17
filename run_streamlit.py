@@ -3,6 +3,7 @@ import pandas as pd
 import streamlit as st
 from google.oauth2.service_account import Credentials
 from gspread import Spreadsheet, Client
+from streamlit_autorefresh import st_autorefresh
 
 
 def load_data(sheets_url):
@@ -44,7 +45,24 @@ def pop_queue(pos: int):
     spreadsheet.worksheet('Queue').delete_rows(pos + 2)
 
 
+def format_interval(x):
+    ts = x.total_seconds()
+    hours, remainder = divmod(ts, 3600)
+    minutes, seconds = divmod(remainder, 60)
+
+    hours = int(hours)
+    minutes = int(minutes)
+    seconds = int(seconds)
+
+    if hours > 0:
+        return f'{hours}h {minutes}m {seconds}s'
+    if minutes > 0:
+        return f'{minutes}m {seconds}s'
+    return f'{seconds}s'
+
+
 if __name__ == '__main__':
+    st_autorefresh(interval=30000, limit=100, key="chatgpt-queue")
     queue_spreadsheet_key = '13rT_tVMi_GItPLF3gqNE9V011qRYCteAHiwGLW-No4M'
 
     if 'LOGGED_IN' not in st.session_state:
@@ -82,6 +100,8 @@ if __name__ == '__main__':
 
     if st.session_state['LOGGED_IN']:
         df = load_data('https://docs.google.com/spreadsheets/d/13rT_tVMi_GItPLF3gqNE9V011qRYCteAHiwGLW-No4M/edit#gid=1804024586')
+        df['In queue'] = (pd.Timestamp.now() - pd.to_datetime(df['Time'], format='%Y-%m-%d %X')).apply(format_interval).astype(str)
+        df = df.drop(['Time'], axis=1)
         st.table(df)
 
         if not df.empty:
