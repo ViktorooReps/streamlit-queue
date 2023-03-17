@@ -34,6 +34,11 @@ def get_in_queue():
     spreadsheet.values_append('Queue', {'valueInputOption': 'RAW'}, {'values': data.values.tolist()})
 
 
+def get_position() -> int:
+    queue = load_data('https://docs.google.com/spreadsheets/d/13rT_tVMi_GItPLF3gqNE9V011qRYCteAHiwGLW-No4M/edit#gid=1804024586')
+    return (queue['Name'] == st.session_state['USERNAME']).idxmax()  # noqa
+
+
 def pop_queue(pos: int):
     spreadsheet = connect_to_spreadsheet('13rT_tVMi_GItPLF3gqNE9V011qRYCteAHiwGLW-No4M')
     spreadsheet.worksheet('Queue').delete_rows(pos + 2)
@@ -82,9 +87,7 @@ if __name__ == '__main__':
         if not df.empty:
             mask = (df['Name'] == st.session_state['USERNAME'])
             in_queue = mask.any() # noqa
-            position = mask.idxmax()  # noqa
         else:
-            position = 0
             in_queue = False
 
         col1, col2 = st.columns(2, gap='large')
@@ -96,7 +99,7 @@ if __name__ == '__main__':
                     st.experimental_rerun()
             else:
                 if st.button('Get out', use_container_width=True):
-                    pop_queue(position)
+                    pop_queue(get_position())
                     st.experimental_rerun()
 
         with col2:
