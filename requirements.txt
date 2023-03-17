@@ -2,3 +2,4 @@ gspread
 pandas
 streamlit
 google
+streamlit-autorefresh
