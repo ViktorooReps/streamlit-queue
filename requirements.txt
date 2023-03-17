@@ -1,5 +1,8 @@
-gspread
-pandas
-streamlit
-google
+gspread==5.7.2
+pandas==1.5.3
+streamlit==1.20.0
+google==3.0.0
 streamlit-autorefresh
+git+https://gitea.ksol.io/karolyi/py3-validate-email@v1.0.9
+streamlit-option-menu
+trycourier==4.4.0
