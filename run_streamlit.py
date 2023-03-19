@@ -3,7 +3,6 @@ import threading
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 from os import environ
-from pprint import pprint
 from typing import Tuple, Optional, Any, Dict
 
 from streamlit.runtime.scriptrunner import add_script_run_ctx, get_script_run_ctx
@@ -34,8 +33,6 @@ time_fmt = '%Y-%m-%d %X'
 
 
 USER_VARIABLES = {'NOTIFY', 'LOGGED_IN', 'EMAIL', 'NOTIFICATION_SENT'}
-accounts_spreadsheet = 'https://docs.google.com/spreadsheets/d/13rT_tVMi_GItPLF3gqNE9V011qRYCteAHiwGLW-No4M/edit#gid=0'
-queue_spreadsheet = 'https://docs.google.com/spreadsheets/d/13rT_tVMi_GItPLF3gqNE9V011qRYCteAHiwGLW-No4M/edit#gid=1804024586'
 
 
 def load_data(sheets_url):
@@ -167,7 +164,7 @@ def maybe_send_notification(queue_state: DataFrame, remote_accounts: DataFrame):
             'to': {
                 'email': user_state['EMAIL']
             },
-            'template': 'MY7YWVJR5XMKHBN48W1HSPC7K45M'
+            'template': environ['EMAIL_TEMPLATE']
         }
     )
 
@@ -183,12 +180,12 @@ def thread_context_wrapper(f, ctx, *args, **kwargs):
 
 
 @st.cache_resource()
-def connect_to_spreadsheet(key: st) -> Spreadsheet:
-    return get_client().open_by_key(key)
+def connect_to_spreadsheet(url: str) -> Spreadsheet:
+    return get_client().open_by_url(url)
 
 
 def get_in_queue():
-    spreadsheet = connect_to_spreadsheet('13rT_tVMi_GItPLF3gqNE9V011qRYCteAHiwGLW-No4M')
+    spreadsheet = connect_to_spreadsheet(environ['QUEUE_SPREADSHEET'])
 
     data = pd.DataFrame(
         {
@@ -205,7 +202,7 @@ def get_position(q) -> int:
 
 
 def pop_queue(pos: int):
-    spreadsheet = connect_to_spreadsheet('13rT_tVMi_GItPLF3gqNE9V011qRYCteAHiwGLW-No4M')
+    spreadsheet = connect_to_spreadsheet(environ['QUEUE_SPREADSHEET'])
     spreadsheet.worksheet('Queue').delete_rows(pos + 2)
 
 
@@ -226,8 +223,8 @@ def format_interval(x):
 
 
 if __name__ == '__main__':
-    future_accounts = login_executor.submit(load_data, accounts_spreadsheet)
-    future_queue = queue_executor.submit(load_data, queue_spreadsheet)
+    future_accounts = login_executor.submit(load_data, environ['ACCOUNTS_SPREADSHEET'])
+    future_queue = queue_executor.submit(load_data, environ['QUEUE_SPREADSHEET'])
     notifications_executor.submit(waiter, maybe_send_notification, future_queue, future_accounts)
 
     if 'USERNAME' not in st.session_state:
@@ -237,7 +234,7 @@ if __name__ == '__main__':
 
     fill_in_defaults(st.session_state)
 
-    st_autorefresh(interval=10000, limit=100, key="chatgpt-queue-refresh-counter")
+    st_autorefresh(interval=10000, limit=100, key="queue-refresh-counter")
 
     if not st.session_state['LOGGED_IN']:
         accounts = future_accounts.result()
@@ -261,7 +258,7 @@ if __name__ == '__main__':
         selected_tab = option_menu(
             None, ['Queue', 'Notify', 'Settings'],
             icons=['house', 'envelope', 'gear'],
-            menu_icon="cast",
+            menu_icon='cast',
             default_index=0,
             orientation='horizontal'
         )
@@ -333,5 +330,3 @@ if __name__ == '__main__':
             if st.button('Logout'):
                 st.session_state['LOGGED_IN'] = False
                 st.experimental_rerun()
-
-
